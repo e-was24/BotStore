@@ -1,0 +1,31 @@
+name: 🚀 Auto Deploy to InfinityFree
+
+on:
+  push:
+    branches:
+      - main  # ganti kalau branch utama kamu bukan 'main'
+
+jobs:
+  ftp-deploy:
+    name: Upload to InfinityFree via FTP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy using FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.ftp.infinityfree.com }}
+          username: ${{ secrets.if0_40367072 }}
+          password: ${{ secrets.RtfLmTw4svo8 }}
+          port: 21
+          protocol: ftp
+          server-dir: /htdocs/
+          local-dir: .
+          state-name: .ftp-deploy-sync-state.json
+          exclude: |
+            **/.git*
+            **/.github*
+            **/node_modules/**
