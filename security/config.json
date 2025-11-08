@@ -1,0 +1,6 @@
+{
+    "scan_path": "../",
+    "log_path": "../storage/logs/security.log",
+    "backup_path": "../storage/backups/",
+    "hash_db": "hashes.json"
+}
