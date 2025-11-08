@@ -1,0 +1,21 @@
+# PHP cache
+*.log
+*.json
+*.zip
+*.db
+
+# Sensitive folders
+/storage/*
+!/storage/config.json
+!/storage/logs/.keep
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment
+.env
+venv/
+.idea/
+.vscode/
