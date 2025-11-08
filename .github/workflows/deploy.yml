@@ -17,9 +17,9 @@ jobs:
       - name: Deploy using FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: ${{ secrets.ftp.infinityfree.com }}
-          username: ${{ secrets.if0_40367072 }}
-          password: ${{ secrets.RtfLmTw4svo8 }}
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
           port: 21
           protocol: ftp
           server-dir: /htdocs/
