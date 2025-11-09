@@ -71,7 +71,7 @@ function create_download_token(string $productFile, string $productName, string 
  */
 function validate_and_consume_token(string $token): false|array
 {
-    $path = __DIR__ . '/../storage/tokens.json';
+    $path = __DIR__ . '/storage/tokens.json';
     if (!file_exists($path)) return false;
 
     $json = file_get_contents($path);
