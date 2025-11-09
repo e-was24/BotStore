@@ -1,0 +1,10 @@
+# Protect sensitive directories
+Options -Indexes
+
+<FilesMatch "\.(json|py|sh|zip|sql)$">
+  Deny from all
+</FilesMatch>
+
+# Redirect errors
+ErrorDocument 403 /pages/error403.php
+ErrorDocument 404 /pages/error404.php

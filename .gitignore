@@ -1,13 +1,18 @@
 # PHP cache
 *.log
-*.json
 *.zip
 *.db
+
+# Allow JSON except those outside storage/products
+*.json
+!storage/products/*.json
 
 # Sensitive folders
 /storage/*
 !/storage/config.json
 !/storage/logs/.keep
+!/storage/products/
+!/storage/products/*.json
 
 # Python cache
 __pycache__/
