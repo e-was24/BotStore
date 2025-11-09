@@ -7,7 +7,7 @@ if (session_status() == PHP_SESSION_NONE) session_start();
  */
 function get_products(): array
 {
-    $path = __DIR__ . '/../storage/products/products.json';
+    $path = __DIR__ . '/storage/products/products.json';
     
     if (!file_exists($path)) {
         error_log("File products.json tidak ditemukan di: $path");
