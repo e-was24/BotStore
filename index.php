@@ -11,8 +11,10 @@ rate_limit('index', 30, 60);
 require_once 'includes/functions.php';
 require_once 'includes/header.php';
 
+// Ambil daftar produk dari JSON
 $products = get_products();
 ?>
+
 <h1>Marketplace Bot — BotStore</h1>
 <p class="lead">Pilih script bot WA / Telegram, lakukan pembayaran, lalu unduh file ZIP.</p>
 
@@ -23,7 +25,10 @@ $products = get_products();
             <p class="price"><?= rupiah($p['price']) ?></p>
             <p><?= htmlspecialchars($p['desc']) ?></p>
             <form method="post" action="checkout.php">
-                <input type="hidden" name="product_id" value="<?= $p['id'] ?>">
+                <input type="hidden" name="product_id" value="<?= htmlspecialchars($p['id']) ?>">
+                <input type="hidden" name="product_file" value="<?= htmlspecialchars($p['file']) ?>">
+                <input type="hidden" name="product_name" value="<?= htmlspecialchars($p['title']) ?>">
+                <input type="hidden" name="product_price" value="<?= htmlspecialchars($p['price']) ?>">
                 <button class="btn" type="submit">Buy</button>
             </form>
         </div>
