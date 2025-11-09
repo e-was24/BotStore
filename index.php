@@ -15,8 +15,6 @@ require_once 'includes/header.php';
 $products = get_products();
 ?>
 
-<pre><?php var_dump($products); ?></pre>
-
 <script>
     console.log("Path kerja PHP:", <?= json_encode(__DIR__) ?>);
     console.log("Data produk dari PHP:", <?= json_encode($products, JSON_PRETTY_PRINT) ?>);
@@ -25,9 +23,7 @@ $products = get_products();
 <h1>Marketplace Bot — BotStore</h1>
 <p class="lead">Pilih script bot WA / Telegram, lakukan pembayaran, lalu unduh file ZIP.</p>
 
-<?php if (empty($products)): ?>
-    <p style="color:red;">⚠️ Tidak ada produk yang ditemukan. Periksa path JSON di includes/functions.php.</p>
-<?php endif; ?>
+
 
 <div class="products-grid">
     <?php foreach ($products as $p): ?>
