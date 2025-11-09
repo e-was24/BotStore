@@ -1,8 +1,4 @@
 <?php
-// ================================================
-// 🧩 BotStore Secure Download System
-// ================================================
-
 require_once 'includes/functions.php';
 require_once 'includes/header.php';
 require_once 'assets/vendor/autoload.php';
@@ -10,35 +6,18 @@ require_once 'assets/vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-
-
-// Paths
 $productsPath = __DIR__ . '/storage/products/';
-$logPath      = __DIR__ . '/storage/logs/security.log';
-$tmpTokens    = __DIR__ . '/storage/tmp/temp_tokens.json';
 
 // ===== Serve file via AJAX =====
 if (isset($_GET['serve']) && $_GET['serve'] == '1') {
     $token = $_GET['token'] ?? null;
-    if (!$token) {
-        http_response_code(400);
-        echo "Invalid token";
-        exit;
-    }
+    if (!$token) { http_response_code(400); echo "Invalid token"; exit; }
 
-    $fileData = validate_and_consume_token($token); // ambil nama file & hapus token
-    if (!$fileData) {
-        http_response_code(403);
-        echo "Token invalid or expired";
-        exit;
-    }
+    $fileData = validate_and_consume_token($token); 
+    if (!$fileData) { http_response_code(403); echo "Token invalid or expired"; exit; }
 
     $filePath = $productsPath . basename($fileData['file']);
-    if (!file_exists($filePath)) {
-        http_response_code(404);
-        echo "File not found";
-        exit;
-    }
+    if (!file_exists($filePath)) { http_response_code(404); echo "File not found"; exit; }
 
     // Kirim email notifikasi ke admin
     try {
@@ -56,10 +35,10 @@ if (isset($_GET['serve']) && $_GET['serve'] == '1') {
         $mail->isHTML(true);
         $mail->send();
     } catch (Exception $e) {
-        logDownload($logPath, "📧 Email failed: " . $e->getMessage());
+        logDownload("📧 Email failed: " . $e->getMessage());
     }
 
-    logDownload($logPath, "✅ {$fileData['email']} downloaded {$fileData['product_name']} ({$fileData['file']})");
+    logDownload("✅ {$fileData['email']} downloaded {$fileData['product_name']} ({$fileData['file']})");
 
     // Serve file
     header('Content-Description: File Transfer');
@@ -83,7 +62,7 @@ if (!$token) {
 ?>
 
 <h2>Download</h2>
-<p>Proses pengunduhan akan dimulai setelah kamu klik tombol <strong>Download</strong>.</p>
+<p>Klik tombol <strong>Download</strong> untuk memulai pengunduhan.</p>
 
 <div class="download-wrap">
     <button id="btnDownload" class="btn primary">Download ZIP</button>
@@ -120,7 +99,7 @@ document.getElementById('btnDownload').addEventListener('click', function() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'download.zip';
+            a.download = blob.name || 'download.zip'; // gunakan nama file asli jika tersedia
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -137,11 +116,3 @@ document.getElementById('btnDownload').addEventListener('click', function() {
 </script>
 
 <?php require_once 'includes/footer.php'; ?>
-
-<?php
-function logDownload($logPath, $message) {
-    $time = date('Y-m-d H:i:s');
-    $line = "[$time] [DOWNLOAD] $message\n";
-    file_put_contents($logPath, $line, FILE_APPEND);
-}
-?>
