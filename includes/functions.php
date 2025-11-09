@@ -2,27 +2,20 @@
 if (session_status() == PHP_SESSION_NONE) session_start();
 
 /**
- * Simple "database" of products.
- * In real app: ambil dari DB (MySQL).
+ * Ambil daftar produk dari JSON.
+ * JSON path: storage/products/products.json
  */
 function get_products()
 {
-    return [
-        [
-            'id' => 'bot-wa-001',
-            'title' => 'Auto Reply WA - Starter',
-            'price' => 199000,
-            'desc' => 'Script auto-reply sederhana untuk WhatsApp (PHP + Webhook).',
-            'file' => 'sample-bot.zip'
-        ],
-        [
-            'id' => 'bot-tg-001',
-            'title' => 'Telegram Bot - Notifier',
-            'price' => 249000,
-            'desc' => 'Bot Telegram notifikasi & scheduler (Python).',
-            'file' => 'sample-bot-tg.zip'
-        ]
-    ];
+    $path = __DIR__ . '/../storage/products/products.json';
+    if (!file_exists($path)) {
+        return []; // jika file tidak ada, kembalikan array kosong
+    }
+
+    $json = file_get_contents($path);
+    $data = json_decode($json, true);
+
+    return $data ?: [];
 }
 
 /**
@@ -35,7 +28,7 @@ function rupiah($n)
 
 /**
  * Create a single-use token after "payment".
- * tokens.json used to store tokens: { "token": { "file": "...", "expires": timestamp } }
+ * tokens.json digunakan untuk menyimpan token: { "token": { "file": "...", "expires": timestamp } }
  */
 function create_download_token($filename, $ttl_seconds = 3600)
 {
@@ -52,7 +45,7 @@ function create_download_token($filename, $ttl_seconds = 3600)
 }
 
 /**
- * Validate token and optionally consume it (single-use).
+ * Validate token dan hapus setelah dipakai (single-use)
  */
 function validate_and_consume_token($token)
 {
@@ -66,7 +59,7 @@ function validate_and_consume_token($token)
         file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT));
         return false;
     }
-    // Consume token (single-use)
+    // Hapus token (single-use)
     unset($data[$token]);
     file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT));
     return $record['file'];
