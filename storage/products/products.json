@@ -1,0 +1,16 @@
+[
+    {
+        "id": "bot-wa-001",
+        "title": "Auto Reply WA - Starter",
+        "price": 199000,
+        "desc": "Script auto-reply sederhana untuk WhatsApp (PHP + Webhook).",
+        "file": "files/sample-bot.zip"
+    },
+    {
+        "id": "bot-tg-001",
+        "title": "Telegram Bot - Notifier",
+        "price": 249000,
+        "desc": "Bot Telegram notifikasi & scheduler (Python).",
+        "file": "files/sample-bot-tg.zip"
+    }
+]
