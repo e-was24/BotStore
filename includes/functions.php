@@ -6,7 +6,7 @@ if (session_status() == PHP_SESSION_NONE) session_start();
  */
 function get_products()
 {
-    $path = __DIR__ . '/../storage/products/products.json';
+    $path = __DIR__ . 'storage/products/products.json';
     if (!file_exists($path)) return [];
     $data = json_decode(file_get_contents($path), true);
     return $data ?: [];
@@ -27,7 +27,7 @@ function create_download_token($productFile, $productName, $userEmail, $ttl = 36
 {
     $token = bin2hex(random_bytes(16));
     $data = [];
-    $path = __DIR__ . '/../storage/tokens.json';
+    $path = __DIR__ . 'storage/tokens.json';
 
     if (file_exists($path)) {
         $data = json_decode(file_get_contents($path), true) ?? [];
