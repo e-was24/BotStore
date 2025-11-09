@@ -18,15 +18,20 @@ function get_products(): array
     $data = json_decode($json, true);
 
     if (json_last_error() !== JSON_ERROR_NONE) {
-        error_log("❌ Error decoding JSON products.json: " . json_last_error_msg());
+        error_log("❌ Error decoding products.json: " . json_last_error_msg());
         return [];
     }
 
-    return $data ?: [];
+    if (!is_array($data)) {
+        error_log("⚠️ Format data JSON tidak valid (bukan array).");
+        return [];
+    }
+
+    return $data;
 }
 
 /**
- * Format rupiah (Rp 199.000)
+ * Format angka ke format Rupiah
  */
 function rupiah(float|int $n): string
 {
@@ -34,14 +39,20 @@ function rupiah(float|int $n): string
 }
 
 /**
- * Buat token single-use untuk download
+ * Buat token single-use untuk download file produk
  */
 function create_download_token(string $productFile, string $productName, string $userEmail, int $ttl = 3600): string
 {
     $token = bin2hex(random_bytes(16));
-    $path = __DIR__ . '/../storage/tokens.json';
+    $storageDir = __DIR__ . '/../storage';
+    $path = $storageDir . '/tokens.json';
 
-    // Baca file token lama (jika ada)
+    // Pastikan folder storage ada
+    if (!is_dir($storageDir)) {
+        mkdir($storageDir, 0777, true);
+    }
+
+    // Baca data token lama
     $data = [];
     if (file_exists($path)) {
         $json = file_get_contents($path);
@@ -54,16 +65,16 @@ function create_download_token(string $productFile, string $productName, string 
 
     // Tambahkan token baru
     $data[$token] = [
-        'file' => $productFile,
+        'file'         => $productFile,
         'product_name' => $productName,
-        'email' => $userEmail,
-        'created_at' => date('Y-m-d H:i:s'),
-        'expires' => time() + $ttl
+        'email'        => $userEmail,
+        'created_at'   => date('Y-m-d H:i:s'),
+        'expires'      => time() + $ttl
     ];
 
-    // Simpan file tokens.json
-    if (false === file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT))) {
-        error_log("❌ Gagal menulis token ke $path");
+    // Simpan ulang tokens.json
+    if (file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT)) === false) {
+        error_log("❌ Gagal menulis token ke: $path");
     }
 
     return $token;
@@ -74,7 +85,7 @@ function create_download_token(string $productFile, string $productName, string 
  */
 function validate_and_consume_token(string $token): false|array
 {
-    $path = __DIR__ . '/../storage/tokens.json'; // ❗ diperbaiki (tadinya tanpa '..')
+    $path = __DIR__ . '/../storage/tokens.json';
 
     if (!file_exists($path)) {
         error_log("❌ File tokens.json tidak ditemukan di: $path");
@@ -89,11 +100,14 @@ function validate_and_consume_token(string $token): false|array
         return false;
     }
 
-    if (!isset($data[$token])) return false;
+    if (!isset($data[$token])) {
+        error_log("⚠️ Token tidak ditemukan: $token");
+        return false;
+    }
 
     $record = $data[$token];
 
-    // Hapus token jika expired
+    // Cek expired
     if ($record['expires'] < time()) {
         unset($data[$token]);
         file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT));
@@ -109,18 +123,22 @@ function validate_and_consume_token(string $token): false|array
 }
 
 /**
- * Logging download
+ * Catat log aktivitas download
  */
 function logDownload(string $message): void
 {
     $logDir = __DIR__ . '/../storage/logs';
-    if (!is_dir($logDir)) mkdir($logDir, 0777, true);
+
+    // Buat folder logs jika belum ada
+    if (!is_dir($logDir)) {
+        mkdir($logDir, 0777, true);
+    }
 
     $logPath = $logDir . '/security.log';
     $time = date('Y-m-d H:i:s');
     $line = "[$time] [DOWNLOAD] $message\n";
-    
-    if (false === file_put_contents($logPath, $line, FILE_APPEND)) {
-        error_log("❌ Gagal menulis log ke $logPath");
+
+    if (file_put_contents($logPath, $line, FILE_APPEND) === false) {
+        error_log("❌ Gagal menulis log ke: $logPath");
     }
 }

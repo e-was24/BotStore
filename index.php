@@ -13,6 +13,7 @@ require_once 'includes/header.php';
 
 // Ambil daftar produk dari JSON
 $products = get_products();
+
 ?>
 
 <script>
