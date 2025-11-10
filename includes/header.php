@@ -18,7 +18,7 @@ if (session_status() == PHP_SESSION_NONE) session_start();
             <nav>
                 <a href="index.php">Toko</a>
                 <a href="checkout.php">Keranjang</a>
-                <a href="admin/index.php"></a>
+                <a href="admin/index.php">login</a>
             </nav>
         </div>
     </header>
