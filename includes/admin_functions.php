@@ -5,7 +5,7 @@ require_once __DIR__ . '/functions.php';
 
 function create_product_encrypted($sourceFile, $productTitle, $productId)
 {
-    $storageSrc = __DIR__ . '/../storage/products/' . $sourceFile;
+    $storageSrc = __DIR__ . '/../storage/products/files' . $sourceFile;
     if (!file_exists($storageSrc)) {
         throw new Exception("Source file tidak ditemukan: $sourceFile");
     }
