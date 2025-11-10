@@ -162,3 +162,4 @@ function create_product_encrypted($sourceFile, $productTitle, $productId)
         'key'  => $key
     ];
 }
+
