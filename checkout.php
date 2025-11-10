@@ -1,18 +1,18 @@
 <?php
 require_once 'includes/functions.php';
 require_once 'includes/header.php';
+require_once 'includes/encrypt_zip.php'; // 🔒 tambahan
 
 // Ambil data produk
 $products = get_products();
 
 /**
- * Tahap 1: User klik "Buy" dari index.php
+ * Tahap 1: User klik "Buy"
  */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
     $pid = $_POST['product_id'];
     $product = null;
 
-    // Cari produk berdasarkan ID
     foreach ($products as $p) {
         if ($p['id'] === $pid) {
             $product = $p;
@@ -20,20 +20,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
         }
     }
 
-    // Jika tidak ketemu
     if (!$product) {
         echo "<p>❌ Produk tidak ditemukan.</p>";
         require_once 'includes/footer.php';
         exit;
     }
-
-    // Tampilkan halaman checkout
     ?>
     <h2>Checkout — <?= htmlspecialchars($product['title']) ?></h2>
     <div class="checkout-box">
         <p>Harga: <strong><?= rupiah($product['price']) ?></strong></p>
         <p>Pembayaran simulasi. Klik <strong>Pay</strong> untuk menyelesaikan transaksi.</p>
-
         <form method="post" action="checkout.php">
             <input type="hidden" name="confirm_product" value="<?= htmlspecialchars($product['id']) ?>">
             <button class="btn primary" type="submit">Pay (Simulate)</button>
@@ -45,13 +41,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
 }
 
 /**
- * Tahap 2: Setelah user klik tombol "Pay"
+ * Tahap 2: Setelah klik "Pay"
  */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_product'])) {
     $pid = $_POST['confirm_product'];
     $product = null;
 
-    // Cari produk berdasarkan ID
     foreach ($products as $p) {
         if ($p['id'] === $pid) {
             $product = $p;
@@ -59,31 +54,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_product'])) {
         }
     }
 
-    // Jika tidak ketemu
     if (!$product) {
         echo "<p>❌ Produk tidak ditemukan.</p>";
         require_once 'includes/footer.php';
         exit;
     }
 
-    // Simulasi email user (karena belum ada sistem login)
+    // Simulasi email pembeli
     $userEmail = "guest@example.com";
 
-    // Buat token download valid 1 jam
+    // 🔒 Enkripsi otomatis file produk
+    try {
+        $enc = create_encrypted_zip($product['file'], $userEmail, $product['title']);
+    } catch (Exception $e) {
+        echo "<p>⚠️ Gagal enkripsi file: " . htmlspecialchars($e->getMessage()) . "</p>";
+        require_once 'includes/footer.php';
+        exit;
+    }
+
+    // Simpan token download (tetap aman)
     $token = create_download_token(
-        $product['file'],     // file ZIP produk
-        $product['title'],    // nama produk
-        $userEmail,           // email user
-        3600                  // durasi token (detik)
+        basename($enc['path']),
+        $product['title'],
+        $userEmail,
+        3600
     );
 
-    // Redirect ke halaman download
-    header("Location: download.php?token=$token");
+    echo "<h2>✅ Pembayaran Berhasil!</h2>";
+    echo "<p>File ZIP terenkripsi kamu sudah siap.</p>";
+    echo "<p><b>Kunci Enkripsi:</b> <code>{$enc['key']}</code></p>";
+    echo "<p><a class='btn' href='download.php?token={$token}'>Download Sekarang</a></p>";
+
+    require_once 'includes/footer.php';
     exit;
 }
 
-/**
- * Default: jika tidak lewat POST, kembali ke index
- */
+// Default redirect
 header("Location: index.php");
 exit;

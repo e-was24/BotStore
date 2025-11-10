@@ -47,23 +47,15 @@ function create_download_token(string $productFile, string $productName, string 
     $storageDir = __DIR__ . '/../storage';
     $path = $storageDir . '/tokens.json';
 
-    // Pastikan folder storage ada
-    if (!is_dir($storageDir)) {
-        mkdir($storageDir, 0777, true);
-    }
+    if (!is_dir($storageDir)) mkdir($storageDir, 0777, true);
 
-    // Baca data token lama
     $data = [];
     if (file_exists($path)) {
         $json = file_get_contents($path);
         $data = json_decode($json, true) ?? [];
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            error_log("❌ Error decoding tokens.json: " . json_last_error_msg());
-            $data = [];
-        }
+        if (json_last_error() !== JSON_ERROR_NONE) $data = [];
     }
 
-    // Tambahkan token baru
     $data[$token] = [
         'file'         => $productFile,
         'product_name' => $productName,
@@ -72,10 +64,7 @@ function create_download_token(string $productFile, string $productName, string 
         'expires'      => time() + $ttl
     ];
 
-    // Simpan ulang tokens.json
-    if (file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT)) === false) {
-        error_log("❌ Gagal menulis token ke: $path");
-    }
+    file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT));
 
     return $token;
 }
@@ -86,39 +75,23 @@ function create_download_token(string $productFile, string $productName, string 
 function validate_and_consume_token(string $token): false|array
 {
     $path = __DIR__ . '/../storage/tokens.json';
-
-    if (!file_exists($path)) {
-        error_log("❌ File tokens.json tidak ditemukan di: $path");
-        return false;
-    }
+    if (!file_exists($path)) return false;
 
     $json = file_get_contents($path);
     $data = json_decode($json, true) ?? [];
+    if (json_last_error() !== JSON_ERROR_NONE) return false;
 
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        error_log("❌ Error decoding tokens.json: " . json_last_error_msg());
-        return false;
-    }
-
-    if (!isset($data[$token])) {
-        error_log("⚠️ Token tidak ditemukan: $token");
-        return false;
-    }
-
+    if (!isset($data[$token])) return false;
     $record = $data[$token];
 
-    // Cek expired
     if ($record['expires'] < time()) {
         unset($data[$token]);
         file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT));
-        error_log("⚠️ Token expired: $token");
         return false;
     }
 
-    // Hapus token (single-use)
     unset($data[$token]);
     file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT));
-
     return $record;
 }
 
@@ -128,17 +101,84 @@ function validate_and_consume_token(string $token): false|array
 function logDownload(string $message): void
 {
     $logDir = __DIR__ . '/../storage/logs';
-
-    // Buat folder logs jika belum ada
-    if (!is_dir($logDir)) {
-        mkdir($logDir, 0777, true);
-    }
+    if (!is_dir($logDir)) mkdir($logDir, 0777, true);
 
     $logPath = $logDir . '/security.log';
     $time = date('Y-m-d H:i:s');
     $line = "[$time] [DOWNLOAD] $message\n";
+    file_put_contents($logPath, $line, FILE_APPEND);
+}
 
-    if (file_put_contents($logPath, $line, FILE_APPEND) === false) {
-        error_log("❌ Gagal menulis log ke: $logPath");
+// ======================================================================
+// === Tambahan admin & enkripsi ZIP untuk produk jualan ===
+// ======================================================================
+
+/**
+ * Path ke file products.json
+ */
+function products_json_path(): string
+{
+    return __DIR__ . '/../storage/products/products.json';
+}
+
+/**
+ * Load semua produk dari JSON
+ */
+function load_products(): array
+{
+    $path = products_json_path();
+    if (!file_exists($path)) return [];
+    $data = json_decode(file_get_contents($path), true);
+    return is_array($data) ? $data : [];
+}
+
+/**
+ * Simpan semua produk ke JSON
+ */
+function save_products(array $products): void
+{
+    $path = products_json_path();
+    file_put_contents($path, json_encode(array_values($products), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+}
+
+/**
+ * Buat ZIP terenkripsi AES-256 untuk produk tertentu
+ * - source: file ZIP asli (disimpan di storage/products/)
+ * - hasil: disimpan di storage/encrypted/
+ * - return: path + key + nama file output
+ */
+function create_product_encrypted(string $sourceFile, string $productTitle, string $productId): array
+{
+    $sourcePath = __DIR__ . '/../storage/products/' . $sourceFile;
+    if (!file_exists($sourcePath)) {
+        throw new Exception("❌ File source tidak ditemukan: $sourcePath");
     }
+
+    // Buat folder tujuan
+    $outDir = __DIR__ . '/../storage/encrypted/';
+    if (!is_dir($outDir)) mkdir($outDir, 0755, true);
+
+    // Generate key unik
+    $key = strtoupper(bin2hex(random_bytes(6))) . '-' . substr(md5($productId . microtime()), 0, 6);
+
+    // Output filename
+    $outName = pathinfo($sourceFile, PATHINFO_FILENAME) . '_enc_' . time() . '.zip';
+    $outPath = $outDir . $outName;
+
+    // Enkripsi ZIP
+    $zip = new ZipArchive();
+    if ($zip->open($outPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
+        throw new Exception("❌ Gagal membuat ZIP terenkripsi: $outPath");
+    }
+
+    // Tambahkan file asli ke dalam ZIP terenkripsi
+    $zip->addFile($sourcePath, basename($sourcePath));
+    $zip->setEncryptionName(basename($sourcePath), ZipArchive::EM_AES_256, $key);
+    $zip->close();
+
+    return [
+        'path' => $outPath,
+        'name' => $outName,
+        'key'  => $key
+    ];
 }
